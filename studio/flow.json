@@ -1,0 +1,1449 @@
+{
+ "version": 1,
+ "categories": [
+  {
+   "value": "hum",
+   "label": "从哼唱出发",
+   "desc": "录一段哼唱，按你的旋律变成歌曲"
+  },
+  {
+   "value": "text",
+   "label": "从文字出发",
+   "desc": "写风格和歌词，生成完整歌曲或纯音乐"
+  },
+  {
+   "value": "ref",
+   "label": "从参考歌曲出发",
+   "desc": "上传一首歌，保留旋律换词或换编曲"
+  },
+  {
+   "value": "remix",
+   "label": "精修已有作品",
+   "desc": "在之前生成的结果上改速度、改词、改风格、改谱"
+  }
+ ],
+ "features": {
+  "hum_song": {
+   "category": "hum",
+   "label": "哼唱 → 带词歌曲",
+   "desc": "按你哼的旋律成曲，填上歌词演唱；长度跟随哼唱",
+   "pipeline": {
+    "transcribe": "melody-full",
+    "target_voice": "Vocal",
+    "cot": "melody"
+   },
+   "steps": [
+    "hum_audio",
+    "genre",
+    "mood",
+    "hum_singer",
+    "language",
+    "tempo",
+    "lyrics_source",
+    "theme",
+    "lyrics",
+    "extra",
+    "variants"
+   ]
+  },
+  "hum_instrumental": {
+   "category": "hum",
+   "label": "哼唱 → 纯音乐",
+   "desc": "乐器演奏你哼的旋律，无人声；需哼 20 秒以上，长度跟随哼唱",
+   "pipeline": {
+    "transcribe": "melody-full",
+    "target_voice": "Ins",
+    "cot": "melody",
+    "instrumental": true
+   },
+   "steps": [
+    "hum_audio",
+    "genre",
+    "lead",
+    "mood",
+    "tempo",
+    "extra",
+    "variants"
+   ]
+  },
+  "text_song": {
+   "category": "text",
+   "label": "写词作曲",
+   "desc": "风格 + 歌词 → 完整歌曲，并得到可编辑的乐谱",
+   "pipeline": {},
+   "steps": [
+    "lyrics_source",
+    "theme",
+    "lyrics",
+    "genre",
+    "mood",
+    "vocal",
+    "language",
+    "tempo",
+    "structure",
+    "plan_mode",
+    "extra",
+    "variants"
+   ]
+  },
+  "instrumental": {
+   "category": "text",
+   "label": "纯音乐",
+   "desc": "只描述风格与主奏乐器，生成无人声作品（实验性）",
+   "pipeline": {
+    "instrumental": true
+   },
+   "steps": [
+    "genre",
+    "lead",
+    "mood",
+    "tempo",
+    "structure",
+    "extra",
+    "variants"
+   ]
+  },
+  "cover_lyrics": {
+   "category": "ref",
+   "label": "参考歌曲 → 换词",
+   "desc": "保留原曲的旋律、和声和速度，只换成新歌词",
+   "pipeline": {
+    "transcribe": "full",
+    "cot": "full"
+   },
+   "steps": [
+    "ref_audio",
+    "orig_genre",
+    "vocal",
+    "language",
+    "lyrics_source",
+    "theme",
+    "lyrics",
+    "extra",
+    "variants"
+   ]
+  },
+  "cover_style": {
+   "category": "ref",
+   "label": "参考歌曲 → 换风格 / 换人唱",
+   "desc": "保留原曲的旋律和歌词，换曲风、编曲或演唱者",
+   "pipeline": {
+    "transcribe": "melody-full",
+    "target_voice": "Vocal",
+    "cot": "melody",
+    "lyrics_required": true
+   },
+   "steps": [
+    "ref_audio",
+    "orig_lyrics",
+    "genre",
+    "mood",
+    "vocal",
+    "language",
+    "tempo",
+    "extra",
+    "variants"
+   ]
+  },
+  "remix": {
+   "category": "remix",
+   "label": "改谱精修",
+   "desc": "基于之前的作品：改速度 / 改词 / 换风格 / 手动改谱",
+   "pipeline": {
+    "from_job": true
+   },
+   "steps": [
+    "base_job",
+    "edit_type",
+    "new_tempo",
+    "genre",
+    "mood",
+    "vocal",
+    "lyrics",
+    "abc",
+    "variants"
+   ]
+  }
+ },
+ "steps": {
+  "category": {
+   "type": "choice",
+   "q": "想从哪里开始？"
+  },
+  "feature": {
+   "type": "choice",
+   "q": "选择具体功能"
+  },
+  "hum_audio": {
+   "type": "file",
+   "q": "上传或录制一段哼唱（15–60 秒，节拍尽量稳，“啦啦啦”或“嗯嗯嗯”都行）",
+   "accept": "audio/*"
+  },
+  "ref_audio": {
+   "type": "file",
+   "q": "上传参考歌曲（完整歌曲或片段）。改编他人作品仅限个人使用",
+   "accept": "audio/*"
+  },
+  "genre": {
+   "type": "choice",
+   "q": "什么曲风？",
+   "custom": true,
+   "options": [
+    {
+     "value": "pop",
+     "label": "流行 Pop",
+     "group": "流行",
+     "style": "Modern pop, catchy, polished production, punchy drums, bright synths, electric bass, memorable hook",
+     "core": "Modern pop, catchy, polished production, punchy drums, memorable hook",
+     "pin": true
+    },
+    {
+     "value": "ballad",
+     "label": "抒情 Ballad",
+     "group": "流行",
+     "style": "Emotional ballad, slow tempo, heartfelt, piano, lush strings, soft drums, soaring chorus",
+     "core": "Emotional ballad, slow tempo, heartfelt, soft drums, soaring climax",
+     "pin": true
+    },
+    {
+     "value": "dancepop",
+     "label": "舞曲流行 Dance-Pop",
+     "group": "流行",
+     "style": "Dance-pop, upbeat, four-on-the-floor beat, glossy synths, funky bass, club-ready chorus",
+     "core": "Dance-pop, upbeat, four-on-the-floor beat, club-ready chorus",
+     "pin": false
+    },
+    {
+     "value": "electropop",
+     "label": "电子流行 Electropop",
+     "group": "流行",
+     "style": "Electropop, sparkling synth layers, crisp electronic drums, pulsing bass, modern and bright",
+     "core": "Electropop, crisp electronic drums, pulsing bass, modern and bright",
+     "pin": false
+    },
+    {
+     "value": "indiepop",
+     "label": "独立流行 Indie Pop",
+     "group": "流行",
+     "style": "Indie pop, jangly guitars, warm analog keys, relaxed groove, dreamy and nostalgic",
+     "core": "Indie pop, relaxed groove, dreamy and nostalgic",
+     "pin": false
+    },
+    {
+     "value": "dreampop",
+     "label": "梦幻流行 Dream Pop",
+     "group": "流行",
+     "style": "Dream pop, shimmering reverb guitars, hazy synth pads, soft drums, ethereal atmosphere",
+     "core": "Dream pop, soft drums, ethereal hazy atmosphere",
+     "pin": false
+    },
+    {
+     "value": "softrock",
+     "label": "软摇滚 Soft Rock",
+     "group": "流行",
+     "style": "Soft rock, warm electric piano, clean guitars, gentle drums, smooth 70s feel",
+     "core": "Soft rock, gentle drums, smooth 70s feel",
+     "pin": false
+    },
+    {
+     "value": "yachtrock",
+     "label": "游艇摇滚 Yacht Rock",
+     "group": "流行",
+     "style": "Yacht rock, smooth Rhodes, clean funky guitar, lush backing harmonies, laid-back groove",
+     "core": "Yacht rock, laid-back groove, smooth and polished",
+     "pin": false
+    },
+    {
+     "value": "mandopop",
+     "label": "华语流行 C-Pop",
+     "group": "华语与亚洲",
+     "style": "Mandopop, modern Chinese pop production, piano and strings, clean guitars, emotional chorus",
+     "core": "Mandopop, modern Chinese pop production, emotional chorus",
+     "pin": false
+    },
+    {
+     "value": "guofeng",
+     "label": "古风 国风",
+     "group": "华语与亚洲",
+     "style": "Chinese traditional style, guzheng, dizi, erhu, pipa, pentatonic melody, modern pop arrangement, elegant",
+     "core": "Chinese traditional style, pentatonic melody, modern pop arrangement, elegant",
+     "pin": true
+    },
+    {
+     "value": "guofeng_edm",
+     "label": "国风电子",
+     "group": "华语与亚洲",
+     "style": "Chinese-style electronic, guzheng and dizi over trap drums and deep 808 bass, pentatonic hooks, cinematic drops",
+     "core": "Chinese-style electronic, trap drums, deep 808 bass, pentatonic hooks, cinematic drops",
+     "pin": false
+    },
+    {
+     "value": "cantopop",
+     "label": "粤语流行 Cantopop",
+     "group": "华语与亚洲",
+     "style": "Cantopop, 90s Hong Kong pop ballad, piano, strings, warm electric guitar, nostalgic",
+     "core": "Cantopop, 90s Hong Kong pop, nostalgic",
+     "pin": false
+    },
+    {
+     "value": "citypop",
+     "label": "City Pop",
+     "group": "华语与亚洲",
+     "style": "City Pop, 80s Japanese city pop, upbeat, danceable, groovy slap bass, electric guitar, synth, neon city night",
+     "core": "City Pop, 80s Japanese city pop, upbeat, danceable, groovy bass, neon city night",
+     "pin": true
+    },
+    {
+     "value": "jpop",
+     "label": "日系流行 J-Pop",
+     "group": "华语与亚洲",
+     "style": "J-Pop, bright energetic arrangement, fast guitars, synth leads, busy bass, anime-style chorus",
+     "core": "J-Pop, bright energetic arrangement, anime-style chorus",
+     "pin": false
+    },
+    {
+     "value": "jrock",
+     "label": "动漫摇滚 Anime Rock",
+     "group": "华语与亚洲",
+     "style": "Anime rock, J-rock, driving distorted guitars, fast drums, melodic bass runs, heroic chorus",
+     "core": "Anime rock, J-rock, fast drums, heroic chorus",
+     "pin": false
+    },
+    {
+     "value": "kpop",
+     "label": "韩流 K-Pop",
+     "group": "华语与亚洲",
+     "style": "K-pop, high-energy production, punchy trap-influenced drums, glossy synths, dynamic genre switches, big hook",
+     "core": "K-pop, high-energy production, punchy drums, dynamic switches, big hook",
+     "pin": false
+    },
+    {
+     "value": "enka",
+     "label": "演歌 Enka",
+     "group": "华语与亚洲",
+     "style": "Enka, traditional Japanese ballad, shamisen, strings, vibrato-rich melody, melancholic",
+     "core": "Enka, traditional Japanese ballad, melancholic",
+     "pin": false
+    },
+    {
+     "value": "rock",
+     "label": "摇滚 Rock",
+     "group": "摇滚与金属",
+     "style": "Energetic modern rock, big distorted electric guitars, driving drums, powerful bass, anthemic chorus, heavy rhythm",
+     "core": "Energetic modern rock, driving drums, powerful bass, anthemic, heavy rhythm",
+     "pin": true
+    },
+    {
+     "value": "indierock",
+     "label": "独立摇滚 Indie Rock",
+     "group": "摇滚与金属",
+     "style": "Indie rock, jangly and fuzzy guitars, loose live drums, melodic bass, raw and heartfelt",
+     "core": "Indie rock, loose live drums, raw and heartfelt",
+     "pin": false
+    },
+    {
+     "value": "poppunk",
+     "label": "流行朋克 Pop Punk",
+     "group": "摇滚与金属",
+     "style": "Pop punk, fast palm-muted power chords, energetic drums, catchy shout-along chorus",
+     "core": "Pop punk, fast energetic drums, catchy shout-along chorus",
+     "pin": false
+    },
+    {
+     "value": "postrock",
+     "label": "后摇 Post-Rock",
+     "group": "摇滚与金属",
+     "style": "Post-rock, slowly building layers of reverb guitars, crescendos, cinematic dynamics, emotional",
+     "core": "Post-rock, slow build, crescendos, cinematic dynamics, emotional",
+     "pin": false
+    },
+    {
+     "value": "grunge",
+     "label": "垃圾摇滚 Grunge",
+     "group": "摇滚与金属",
+     "style": "Grunge, sludgy distorted guitars, heavy drums, brooding verses, explosive chorus",
+     "core": "Grunge, heavy drums, brooding verses, explosive chorus",
+     "pin": false
+    },
+    {
+     "value": "metal",
+     "label": "金属 Metal",
+     "group": "摇滚与金属",
+     "style": "Heavy metal, aggressive, heavily distorted electric guitars, heavy riffs, double kick drums, pounding drums, intense, loud",
+     "core": "Heavy metal, aggressive, heavy riffs, double kick drums, pounding drums, intense, loud",
+     "pin": true
+    },
+    {
+     "value": "numetal",
+     "label": "新金属 Nu Metal",
+     "group": "摇滚与金属",
+     "style": "Nu metal, down-tuned chugging guitars, hip-hop groove drums, turntable scratches, angry verses, huge chorus",
+     "core": "Nu metal, hip-hop groove drums, angry verses, huge chorus",
+     "pin": false
+    },
+    {
+     "value": "glammetal",
+     "label": "华丽金属 Glam Metal",
+     "group": "摇滚与金属",
+     "style": "80s glam metal, shredding guitar solos, big gated drums, arena-size chorus",
+     "core": "80s glam metal, big gated drums, arena-size chorus",
+     "pin": false
+    },
+    {
+     "value": "rocknroll",
+     "label": "摇滚乐 Rock & Roll",
+     "group": "摇滚与金属",
+     "style": "50s rock and roll, boogie piano, twangy guitar, upright bass slap, swinging drums",
+     "core": "50s rock and roll, swinging rhythm, energetic",
+     "pin": false
+    },
+    {
+     "value": "edm",
+     "label": "电子 EDM",
+     "group": "电子",
+     "style": "EDM, electronic dance music, four-on-the-floor kick, big synth drops, sidechained pads, rising builds, festival energy",
+     "core": "EDM, electronic dance music, four-on-the-floor kick, rising builds, festival energy",
+     "pin": true
+    },
+    {
+     "value": "house",
+     "label": "浩室 House",
+     "group": "电子",
+     "style": "Deep house, four-on-the-floor groove, warm bassline, chopped piano chords, smooth pads",
+     "core": "Deep house, four-on-the-floor groove, warm bassline",
+     "pin": false
+    },
+    {
+     "value": "synthwave",
+     "label": "合成器浪潮 Synthwave",
+     "group": "电子",
+     "style": "Synthwave, 80s retro, analog arpeggios, gated reverb drums, neon night drive",
+     "core": "Synthwave, 80s retro, gated reverb drums, neon night drive",
+     "pin": false
+    },
+    {
+     "value": "futurebass",
+     "label": "未来贝斯 Future Bass",
+     "group": "电子",
+     "style": "Future bass, lush supersaw chords, pitched vocal chops, trap drums, euphoric drops",
+     "core": "Future bass, trap drums, euphoric drops",
+     "pin": false
+    },
+    {
+     "value": "dubstep",
+     "label": "回响贝斯 Dubstep",
+     "group": "电子",
+     "style": "Dubstep, heavy wobble bass, half-time drums, aggressive drops",
+     "core": "Dubstep, half-time drums, aggressive drops",
+     "pin": false
+    },
+    {
+     "value": "eurobeat",
+     "label": "欧陆舞曲 Eurobeat",
+     "group": "电子",
+     "style": "Eurobeat, very fast tempo, driving synth bass, stabbing synth leads, high-energy",
+     "core": "Eurobeat, very fast tempo, driving, high-energy",
+     "pin": false
+    },
+    {
+     "value": "nudisco",
+     "label": "新迪斯科 Nu-Disco",
+     "group": "电子",
+     "style": "Nu-disco, funky bass guitar, disco strings, filtered house beat, groovy",
+     "core": "Nu-disco, filtered house beat, groovy",
+     "pin": false
+    },
+    {
+     "value": "lofi",
+     "label": "Lo-fi",
+     "group": "电子",
+     "style": "Lo-fi hip hop, chill, dusty drums, warm Rhodes keys, vinyl crackle, mellow, relaxed",
+     "core": "Lo-fi hip hop, chill, dusty drums, vinyl crackle, mellow, relaxed",
+     "pin": true
+    },
+    {
+     "value": "ambient",
+     "label": "氛围 Ambient",
+     "group": "电子",
+     "style": "Ambient, slowly evolving synth textures, soft drones, spacious reverb, calm and meditative",
+     "core": "Ambient, spacious, calm and meditative",
+     "pin": false
+    },
+    {
+     "value": "hiphop",
+     "label": "嘻哈 Hip-hop",
+     "group": "嘻哈与节奏布鲁斯",
+     "style": "Hip-hop, boom bap drums, deep 808 bass, sampled loop, head-nodding groove, rap style",
+     "core": "Hip-hop, boom bap drums, deep 808 bass, head-nodding groove",
+     "pin": true
+    },
+    {
+     "value": "trap",
+     "label": "陷阱 Trap",
+     "group": "嘻哈与节奏布鲁斯",
+     "style": "Trap, rolling hi-hats, booming 808 bass, dark synth melody, hard-hitting",
+     "core": "Trap, rolling hi-hats, booming 808 bass, hard-hitting",
+     "pin": false
+    },
+    {
+     "value": "rnb",
+     "label": "R&B",
+     "group": "嘻哈与节奏布鲁斯",
+     "style": "Contemporary R&B, smooth, soulful groove, silky bass, lush electric piano chords, laid-back drums, sensual",
+     "core": "Contemporary R&B, smooth, soulful groove, silky bass, laid-back drums",
+     "pin": true
+    },
+    {
+     "value": "neosoul",
+     "label": "新灵魂 Neo-Soul",
+     "group": "嘻哈与节奏布鲁斯",
+     "style": "Neo-soul, warm Rhodes, jazzy chords, swung drums, round bass, intimate",
+     "core": "Neo-soul, jazzy chords, swung drums, intimate",
+     "pin": false
+    },
+    {
+     "value": "funk",
+     "label": "放克 Funk",
+     "group": "嘻哈与节奏布鲁斯",
+     "style": "Funk, tight syncopated drums, slap bass, choppy rhythm guitar, horn stabs, groovy",
+     "core": "Funk, tight syncopated drums, slap bass, groovy",
+     "pin": false
+    },
+    {
+     "value": "disco",
+     "label": "迪斯科 Disco",
+     "group": "嘻哈与节奏布鲁斯",
+     "style": "70s disco, four-on-the-floor, octave bass, lush strings, funky guitar, glittering",
+     "core": "70s disco, four-on-the-floor, octave bass, glittering",
+     "pin": false
+    },
+    {
+     "value": "jazz",
+     "label": "爵士 Jazz",
+     "group": "爵士与蓝调",
+     "style": "Jazz, swing feel, walking upright bass, brushed drums, jazz piano, Rhodes, saxophone, sophisticated harmony",
+     "core": "Jazz, swing feel, walking upright bass, brushed drums, sophisticated harmony",
+     "pin": true
+    },
+    {
+     "value": "bigband",
+     "label": "大乐队摇摆 Big Band",
+     "group": "爵士与蓝调",
+     "style": "Big band swing, brass section, saxophone section, walking bass, swinging drums",
+     "core": "Big band swing, walking bass, swinging drums",
+     "pin": false
+    },
+    {
+     "value": "bossanova",
+     "label": "波萨诺瓦 Bossa Nova",
+     "group": "爵士与蓝调",
+     "style": "Bossa nova, nylon guitar, soft brushed percussion, gentle syncopation, breezy",
+     "core": "Bossa nova, soft brushed percussion, gentle syncopation, breezy",
+     "pin": false
+    },
+    {
+     "value": "blues",
+     "label": "蓝调 Blues",
+     "group": "爵士与蓝调",
+     "style": "Blues, 12-bar shuffle, expressive electric guitar licks, harmonica, organ, gritty",
+     "core": "Blues, 12-bar shuffle, gritty",
+     "pin": false
+    },
+    {
+     "value": "soul",
+     "label": "灵魂乐 Soul",
+     "group": "爵士与蓝调",
+     "style": "Classic soul, Hammond organ, horn section, tight rhythm section, warm and uplifting",
+     "core": "Classic soul, tight rhythm section, warm and uplifting",
+     "pin": false
+    },
+    {
+     "value": "gospel",
+     "label": "福音 Gospel",
+     "group": "爵士与蓝调",
+     "style": "Gospel, powerful choir, Hammond organ, piano, clapping, uplifting",
+     "core": "Gospel, clapping, uplifting",
+     "pin": false
+    },
+    {
+     "value": "folk",
+     "label": "民谣 Folk",
+     "group": "民谣乡村与世界",
+     "style": "Acoustic folk, fingerpicked acoustic guitar, warm and organic, gentle percussion, intimate, storytelling",
+     "core": "Acoustic folk, warm and organic, gentle percussion, intimate, storytelling",
+     "pin": true
+    },
+    {
+     "value": "country",
+     "label": "乡村 Country",
+     "group": "民谣乡村与世界",
+     "style": "Country, acoustic and electric guitars, pedal steel, fiddle, steady two-step drums",
+     "core": "Country, steady two-step drums, heartland feel",
+     "pin": false
+    },
+    {
+     "value": "bluegrass",
+     "label": "蓝草 Bluegrass",
+     "group": "民谣乡村与世界",
+     "style": "Bluegrass, banjo, fiddle, mandolin, upright bass, fast picking",
+     "core": "Bluegrass, fast picking, lively",
+     "pin": false
+    },
+    {
+     "value": "reggae",
+     "label": "雷鬼 Reggae",
+     "group": "民谣乡村与世界",
+     "style": "Reggae, offbeat guitar skank, deep bass, one-drop drums, laid-back",
+     "core": "Reggae, one-drop drums, laid-back",
+     "pin": false
+    },
+    {
+     "value": "reggaeton",
+     "label": "雷鬼动 Reggaetón",
+     "group": "民谣乡村与世界",
+     "style": "Reggaetón, dembow rhythm, deep bass, Latin percussion, sensual dance groove",
+     "core": "Reggaetón, dembow rhythm, sensual dance groove",
+     "pin": false
+    },
+    {
+     "value": "latinpop",
+     "label": "拉丁流行 Latin Pop",
+     "group": "民谣乡村与世界",
+     "style": "Latin pop, Spanish guitar, congas and bongos, brass accents, sunny dance rhythm",
+     "core": "Latin pop, sunny dance rhythm",
+     "pin": false
+    },
+    {
+     "value": "flamenco",
+     "label": "弗拉门戈 Flamenco",
+     "group": "民谣乡村与世界",
+     "style": "Flamenco, rapid Spanish guitar, palmas hand claps, cajón, passionate",
+     "core": "Flamenco, palmas hand claps, cajón, passionate",
+     "pin": false
+    },
+    {
+     "value": "afrobeats",
+     "label": "非洲节拍 Afrobeats",
+     "group": "民谣乡村与世界",
+     "style": "Afrobeats, syncopated percussion, log drum, warm bass, bright guitar riffs, joyful",
+     "core": "Afrobeats, syncopated percussion, warm bass, joyful",
+     "pin": false
+    },
+    {
+     "value": "celtic",
+     "label": "凯尔特 Celtic",
+     "group": "民谣乡村与世界",
+     "style": "Celtic folk, tin whistle, fiddle, bodhrán, acoustic guitar, jig rhythm",
+     "core": "Celtic folk, jig rhythm, lively",
+     "pin": false
+    },
+    {
+     "value": "classical",
+     "label": "古典 Classical",
+     "group": "古典影视与其他",
+     "style": "Classical orchestral, strings, woodwinds, French horns, timpani, expressive dynamics",
+     "core": "Classical, expressive dynamics, elegant",
+     "pin": false
+    },
+    {
+     "value": "cinematic",
+     "label": "电影配乐 Cinematic",
+     "group": "古典影视与其他",
+     "style": "Epic cinematic score, full orchestra, taiko drums, choir, soaring brass, huge build",
+     "core": "Epic cinematic score, taiko drums, huge build",
+     "pin": false
+    },
+    {
+     "value": "musical",
+     "label": "音乐剧 Musical Theatre",
+     "group": "古典影视与其他",
+     "style": "Broadway musical theatre, piano and orchestra, dramatic dynamics, theatrical storytelling",
+     "core": "Broadway musical theatre, dramatic dynamics, theatrical storytelling",
+     "pin": false
+    },
+    {
+     "value": "children",
+     "label": "儿歌 Children's Song",
+     "group": "古典影视与其他",
+     "style": "Children's song, playful, simple melody, ukulele, glockenspiel, hand claps, cheerful",
+     "core": "Children's song, playful, simple melody, cheerful",
+     "pin": false
+    },
+    {
+     "value": "acappella",
+     "label": "阿卡贝拉 A Cappella",
+     "group": "古典影视与其他",
+     "style": "A cappella, layered vocal harmonies, vocal percussion, no instruments",
+     "core": "A cappella, layered vocal harmonies, vocal percussion",
+     "pin": false
+    }
+   ]
+  },
+  "mood": {
+   "type": "choice",
+   "q": "什么情绪？",
+   "custom": true,
+   "options": [
+    {
+     "value": "warm",
+     "label": "温暖治愈",
+     "style": "warm, hopeful, comforting",
+     "pin": true
+    },
+    {
+     "value": "sad",
+     "label": "伤感",
+     "style": "melancholic, bittersweet",
+     "pin": true
+    },
+    {
+     "value": "hype",
+     "label": "热血燃",
+     "style": "energetic, uplifting, powerful",
+     "pin": true
+    },
+    {
+     "value": "romantic",
+     "label": "浪漫甜",
+     "style": "romantic, sweet",
+     "pin": true
+    },
+    {
+     "value": "chill",
+     "label": "慵懒 Chill",
+     "style": "laid-back, relaxed",
+     "pin": true
+    },
+    {
+     "value": "epic",
+     "label": "史诗感",
+     "style": "epic, cinematic, grand",
+     "pin": true
+    },
+    {
+     "value": "playful",
+     "label": "俏皮可爱",
+     "style": "playful, cute, bouncy",
+     "pin": true
+    },
+    {
+     "value": "nostalgic",
+     "label": "怀旧",
+     "style": "nostalgic, wistful",
+     "pin": false
+    },
+    {
+     "value": "dreamy",
+     "label": "梦幻",
+     "style": "dreamy, floating, ethereal",
+     "pin": false
+    },
+    {
+     "value": "dark",
+     "label": "暗黑",
+     "style": "dark, tense, ominous",
+     "pin": false
+    },
+    {
+     "value": "angry",
+     "label": "愤怒",
+     "style": "angry, aggressive, rebellious",
+     "pin": false
+    },
+    {
+     "value": "lonely",
+     "label": "孤独",
+     "style": "lonely, introspective, quiet",
+     "pin": false
+    },
+    {
+     "value": "hopeful",
+     "label": "励志",
+     "style": "inspiring, triumphant, uplifting",
+     "pin": false
+    },
+    {
+     "value": "sexy",
+     "label": "性感",
+     "style": "sensual, seductive, smooth",
+     "pin": false
+    },
+    {
+     "value": "mysterious",
+     "label": "神秘",
+     "style": "mysterious, suspenseful",
+     "pin": false
+    },
+    {
+     "value": "peaceful",
+     "label": "宁静",
+     "style": "peaceful, serene, gentle",
+     "pin": false
+    },
+    {
+     "value": "party",
+     "label": "派对",
+     "style": "party, euphoric, celebratory",
+     "pin": false
+    }
+   ]
+  },
+  "vocal": {
+   "type": "choice",
+   "q": "谁来唱？",
+   "custom": true,
+   "options": [
+    {
+     "value": "f_bright",
+     "label": "清亮女声",
+     "style": "bright clear female vocal",
+     "pin": true,
+     "group": "女声"
+    },
+    {
+     "value": "f_soft",
+     "label": "温柔气声女声",
+     "style": "soft breathy female vocal",
+     "pin": true,
+     "group": "女声"
+    },
+    {
+     "value": "f_power",
+     "label": "高亢有力女声",
+     "style": "powerful belting female vocal, wide range",
+     "pin": false,
+     "group": "女声"
+    },
+    {
+     "value": "f_sweet",
+     "label": "甜美少女音",
+     "style": "sweet youthful female vocal, cute",
+     "pin": false,
+     "group": "女声"
+    },
+    {
+     "value": "f_husky",
+     "label": "烟嗓女声",
+     "style": "husky smoky female vocal, jazzy",
+     "pin": false,
+     "group": "女声"
+    },
+    {
+     "value": "f_whisper",
+     "label": "耳语女声",
+     "style": "intimate whispery female vocal",
+     "pin": false,
+     "group": "女声"
+    },
+    {
+     "value": "m_warm",
+     "label": "温暖男声",
+     "style": "warm male vocal",
+     "pin": true,
+     "group": "男声"
+    },
+    {
+     "value": "m_raspy",
+     "label": "沙哑有力男声",
+     "style": "raspy powerful male vocal",
+     "pin": true,
+     "group": "男声"
+    },
+    {
+     "value": "m_deep",
+     "label": "低沉男中音",
+     "style": "deep baritone male vocal",
+     "pin": false,
+     "group": "男声"
+    },
+    {
+     "value": "m_tenor",
+     "label": "高亢男高音",
+     "style": "soaring tenor male vocal, high notes",
+     "pin": false,
+     "group": "男声"
+    },
+    {
+     "value": "m_falsetto",
+     "label": "假声男声",
+     "style": "smooth male falsetto vocal",
+     "pin": false,
+     "group": "男声"
+    },
+    {
+     "value": "m_soft",
+     "label": "温柔男声",
+     "style": "soft gentle male vocal",
+     "pin": false,
+     "group": "男声"
+    },
+    {
+     "value": "rap_m",
+     "label": "男声说唱",
+     "style": "male rap vocal, rhythmic flow",
+     "pin": false,
+     "group": "说唱与特殊"
+    },
+    {
+     "value": "rap_f",
+     "label": "女声说唱",
+     "style": "female rap vocal, confident flow",
+     "pin": false,
+     "group": "说唱与特殊"
+    },
+    {
+     "value": "scream",
+     "label": "嘶吼（金属）",
+     "style": "harsh screamed vocals",
+     "pin": false,
+     "group": "说唱与特殊"
+    },
+    {
+     "value": "opera",
+     "label": "美声",
+     "style": "operatic bel canto vocal",
+     "pin": false,
+     "group": "说唱与特殊"
+    },
+    {
+     "value": "child",
+     "label": "童声",
+     "style": "children's vocal",
+     "pin": false,
+     "group": "说唱与特殊"
+    },
+    {
+     "value": "duet",
+     "label": "男女对唱（不稳定）",
+     "style": "male and female duet vocals",
+     "pin": true,
+     "group": "合唱与对唱",
+     "desc": "实测模型通常只唱出一个声部，想要对唱建议分两次生成"
+    },
+    {
+     "value": "choir",
+     "label": "合唱感",
+     "style": "layered choir vocals",
+     "pin": true,
+     "group": "合唱与对唱"
+    },
+    {
+     "value": "boyband",
+     "label": "男团合唱",
+     "style": "boy band harmonies, multiple male vocals",
+     "pin": false,
+     "group": "合唱与对唱"
+    }
+   ]
+  },
+  "language": {
+   "type": "choice",
+   "q": "用什么语言唱？（唱的内容就是歌词本身，选的语言必须和歌词一致）",
+   "options": [
+    {
+     "value": "auto",
+     "label": "跟随歌词",
+     "desc": "按你写的歌词自动识别语言"
+    },
+    {
+     "value": "zh",
+     "label": "普通话",
+     "style": "Mandarin",
+     "script": "han"
+    },
+    {
+     "value": "yue",
+     "label": "粤语（实验）",
+     "style": "Cantonese",
+     "script": "han",
+     "desc": "官方只支持中文和英文，粤语未经官方验证"
+    },
+    {
+     "value": "en",
+     "label": "英语",
+     "style": "English",
+     "script": "latin"
+    },
+    {
+     "value": "ja",
+     "label": "日语（实验）",
+     "style": "Japanese",
+     "script": "ja",
+     "desc": "官方只支持中文和英文；歌词必须是日语"
+    },
+    {
+     "value": "ko",
+     "label": "韩语（实验）",
+     "style": "Korean",
+     "script": "ko",
+     "desc": "官方只支持中文和英文；歌词必须是韩语"
+    }
+   ]
+  },
+  "tempo": {
+   "type": "choice",
+   "q": "速度？",
+   "options": [
+    {
+     "value": "follow",
+     "label": "跟随原曲/哼唱",
+     "only": [
+      "hum_song",
+      "hum_instrumental",
+      "cover_lyrics",
+      "cover_style"
+     ]
+    },
+    {
+     "value": "70",
+     "label": "慢 ~70 BPM",
+     "bpm": 70
+    },
+    {
+     "value": "88",
+     "label": "中慢 ~88 BPM",
+     "bpm": 88
+    },
+    {
+     "value": "108",
+     "label": "中速 ~108 BPM",
+     "bpm": 108
+    },
+    {
+     "value": "128",
+     "label": "快 ~128 BPM",
+     "bpm": 128
+    },
+    {
+     "value": "150",
+     "label": "很快 ~150 BPM",
+     "bpm": 150
+    }
+   ],
+   "agent_skip": true
+  },
+  "lead": {
+   "type": "choice",
+   "q": "主奏乐器？",
+   "custom": true,
+   "options": [
+    {
+     "value": "piano",
+     "label": "钢琴",
+     "style": "piano carries the melody, expressive solo piano, prominent piano lead",
+     "pin": true,
+     "group": "键盘"
+    },
+    {
+     "value": "rhodes",
+     "label": "电钢琴",
+     "style": "Rhodes electric piano carries the melody",
+     "pin": false,
+     "group": "键盘"
+    },
+    {
+     "value": "organ",
+     "label": "管风琴/哈蒙德",
+     "style": "Hammond organ carries the melody",
+     "pin": false,
+     "group": "键盘"
+    },
+    {
+     "value": "synth",
+     "label": "合成器",
+     "style": "synthesizer carries the melody, prominent synth lead, analog synth",
+     "pin": true,
+     "group": "键盘"
+    },
+    {
+     "value": "guitar",
+     "label": "电吉他",
+     "style": "electric guitar carries the melody, prominent lead guitar, melodic guitar solo",
+     "pin": true,
+     "group": "吉他与弦乐"
+    },
+    {
+     "value": "acoustic",
+     "label": "木吉他",
+     "style": "acoustic guitar carries the melody, fingerpicked lead",
+     "pin": false,
+     "group": "吉他与弦乐"
+    },
+    {
+     "value": "strings",
+     "label": "弦乐团",
+     "style": "string orchestra carries the melody, soaring violins and cellos, cinematic strings",
+     "pin": true,
+     "group": "吉他与弦乐"
+    },
+    {
+     "value": "violin",
+     "label": "小提琴",
+     "style": "violin carries the melody, expressive solo violin lead",
+     "pin": false,
+     "group": "吉他与弦乐"
+    },
+    {
+     "value": "cello",
+     "label": "大提琴",
+     "style": "cello carries the melody, warm solo cello lead",
+     "pin": false,
+     "group": "吉他与弦乐"
+    },
+    {
+     "value": "sax",
+     "label": "萨克斯",
+     "style": "saxophone carries the melody, prominent tenor saxophone lead, saxophone solo",
+     "pin": true,
+     "group": "管乐"
+    },
+    {
+     "value": "trumpet",
+     "label": "小号",
+     "style": "trumpet carries the melody, bright trumpet lead",
+     "pin": false,
+     "group": "管乐"
+    },
+    {
+     "value": "flute",
+     "label": "长笛",
+     "style": "flute carries the melody, airy flute lead",
+     "pin": false,
+     "group": "管乐"
+    },
+    {
+     "value": "harmonica",
+     "label": "口琴",
+     "style": "harmonica carries the melody",
+     "pin": false,
+     "group": "管乐"
+    },
+    {
+     "value": "guzheng",
+     "label": "古筝",
+     "style": "guzheng carries the melody, prominent Chinese zither lead",
+     "pin": true,
+     "group": "民族乐器"
+    },
+    {
+     "value": "erhu",
+     "label": "二胡",
+     "style": "erhu carries the melody, expressive Chinese erhu lead",
+     "pin": false,
+     "group": "民族乐器"
+    },
+    {
+     "value": "pipa",
+     "label": "琵琶",
+     "style": "pipa carries the melody, plucked Chinese pipa lead",
+     "pin": false,
+     "group": "民族乐器"
+    },
+    {
+     "value": "dizi",
+     "label": "笛子",
+     "style": "dizi bamboo flute carries the melody",
+     "pin": false,
+     "group": "民族乐器"
+    },
+    {
+     "value": "musicbox",
+     "label": "八音盒",
+     "style": "music box carries the melody, delicate",
+     "pin": false,
+     "group": "其他"
+    }
+   ]
+  },
+  "lyrics_source": {
+   "type": "choice",
+   "q": "歌词怎么来？",
+   "options": [
+    {
+     "value": "self",
+     "label": "我自己写/粘贴",
+     "desc": "下一步直接输入歌词"
+    },
+    {
+     "value": "agent",
+     "label": "AI 帮我写",
+     "desc": "告诉 AI 主题，由对话中的 AI 写词（按旋律音符数对齐）",
+     "agent_only": true
+    }
+   ]
+  },
+  "theme": {
+   "type": "text",
+   "q": "歌曲写什么主题/故事？（一两句话即可）",
+   "when": {
+    "lyrics_source": [
+     "agent"
+    ]
+   }
+  },
+  "lyrics": {
+   "type": "lyrics",
+   "q": "输入歌词，用 [Verse] [Chorus] [Bridge] 标段落",
+   "when": {
+    "lyrics_source": [
+     "self"
+    ],
+    "edit_type": [
+     "lyrics"
+    ]
+   }
+  },
+  "structure": {
+   "type": "choice",
+   "q": "多长？",
+   "options": [
+    {
+     "value": "short",
+     "label": "约 1 分钟",
+     "desc": "纯音乐按整段裁到 1 分钟左右；写词时写 1 段主歌 + 1 段副歌",
+     "sections": [
+      "Verse",
+      "Chorus"
+     ]
+    },
+    {
+     "value": "standard",
+     "label": "约 2.5 分钟",
+     "desc": "纯音乐裁到 2.5 分钟左右；写词时写完整主副歌",
+     "sections": [
+      "Verse",
+      "Pre-Chorus",
+      "Chorus",
+      "Verse",
+      "Chorus",
+      "Bridge",
+      "Chorus"
+     ]
+    },
+    {
+     "value": "long",
+     "label": "约 4 分钟",
+     "desc": "纯音乐最长 4 分钟左右；写词时加前奏、桥段和尾奏",
+     "sections": [
+      "Intro",
+      "Verse",
+      "Pre-Chorus",
+      "Chorus",
+      "Verse",
+      "Pre-Chorus",
+      "Chorus",
+      "Bridge",
+      "Chorus",
+      "Outro"
+     ]
+    }
+   ],
+   "when": {
+    "lyrics_source": [
+     "agent",
+     null
+    ]
+   }
+  },
+  "plan_mode": {
+   "agent_skip": true,
+   "type": "choice",
+   "q": "生成方式？",
+   "options": [
+    {
+     "value": "full",
+     "label": "完整规划（推荐）",
+     "desc": "先出旋律+和弦谱，之后能精修"
+    },
+    {
+     "value": "melody",
+     "label": "只规划旋律",
+     "desc": "旋律可编辑，伴奏自由发挥"
+    },
+    {
+     "value": "off",
+     "label": "直接出歌",
+     "desc": "不出谱：不能精修，速度也只能大致参考（实测要 108 出来 91）"
+    }
+   ]
+  },
+  "orig_genre": {
+   "type": "choice",
+   "q": "原曲大概是什么风格？（模型不能直接听原曲的编曲，要靠这个描述尽量还原）",
+   "custom": true,
+   "options_from": "genre"
+  },
+  "hum_singer": {
+   "type": "choice",
+   "q": "用什么样的 AI 歌手来唱你的旋律？（成品的歌声由模型合成，不会是你本人的声音）",
+   "custom": true,
+   "options_from": "vocal"
+  },
+  "orig_lyrics": {
+   "type": "lyrics",
+   "q": "粘贴原曲歌词（可以直接粘字幕，一行一句；不写段落标签会自动加）"
+  },
+  "variants": {
+   "type": "choice",
+   "q": "一次生成几个版本？（多出几版方便挑选，时间成倍）",
+   "options": [
+    {
+     "value": "1",
+     "label": "1 个"
+    },
+    {
+     "value": "2",
+     "label": "2 个对比"
+    },
+    {
+     "value": "4",
+     "label": "4 个挑选"
+    }
+   ],
+   "agent_skip": true
+  },
+  "vram": {
+   "type": "choice",
+   "q": "显存档位？",
+   "options": [
+    {
+     "value": "auto",
+     "label": "自动（按显卡选择）"
+    },
+    {
+     "value": "16g",
+     "label": "16G 快速",
+     "desc": "无损，模型常驻显存；3 分钟的歌约 2 分钟。显存不够时自动改用省显存模式重跑"
+    },
+    {
+     "value": "16g-safe",
+     "label": "16G 省显存",
+     "desc": "无损，阶段之间把模型挪到内存，慢一些；同时开着其他占显存的程序时用"
+    },
+    {
+     "value": "16g-fp8",
+     "label": "16G FP8",
+     "desc": "再省约 1.4GB，但会关掉 CUDA Graph，实测慢 3~6 倍；只在显存很紧时用"
+    },
+    {
+     "value": "24g",
+     "label": "24G 官方基线"
+    },
+    {
+     "value": "12g",
+     "label": "12G 实验",
+     "desc": "FP8 + 卸载 + 小块解码，很慢（30 秒的歌约 2 分钟）"
+    }
+   ]
+  },
+  "base_job": {
+   "type": "job",
+   "q": "要精修哪一首？（任务 ID）"
+  },
+  "edit_type": {
+   "type": "choice",
+   "q": "想改什么？",
+   "options": [
+    {
+     "value": "tempo",
+     "label": "改速度",
+     "desc": "旋律和弦不变，只改 BPM"
+    },
+    {
+     "value": "restyle",
+     "label": "换风格/编曲",
+     "desc": "保留整份乐谱，换曲风唱法"
+    },
+    {
+     "value": "lyrics",
+     "label": "改歌词",
+     "desc": "保留乐谱，换歌词重新演唱"
+    },
+    {
+     "value": "abc",
+     "label": "手动改谱",
+     "desc": "直接编辑 ABC 乐谱（旋律/和弦/结构）"
+    }
+   ]
+  },
+  "new_tempo": {
+   "type": "number",
+   "q": "新速度 BPM？",
+   "min": 40,
+   "max": 220,
+   "when": {
+    "edit_type": [
+     "tempo"
+    ]
+   }
+  },
+  "abc": {
+   "type": "abc",
+   "q": "编辑 ABC 乐谱",
+   "when": {
+    "edit_type": [
+     "abc"
+    ]
+   }
+  },
+  "extra": {
+   "type": "text",
+   "optional": true,
+   "q": "补充描述（可选）：还想要什么具体效果？例如“前奏只有钢琴，副歌加入弦乐和鼓”“带点黑胶质感”",
+   "agent_skip": true
+  }
+ },
+ "step_when": {
+  "genre": {
+   "edit_type": [
+    "restyle",
+    null
+   ]
+  },
+  "mood": {
+   "edit_type": [
+    "restyle",
+    null
+   ]
+  },
+  "vocal": {
+   "edit_type": [
+    "restyle",
+    null
+   ]
+  }
+ },
+ "vram_profiles": {
+  "24g": {
+   "budget": 24,
+   "quantization": "none",
+   "offload_ar": false
+  },
+  "16g": {
+   "budget": 16,
+   "quantization": "none",
+   "offload_ar": false,
+   "fallback": "16g-safe"
+  },
+  "16g-safe": {
+   "budget": 16,
+   "quantization": "none",
+   "offload_ar": true
+  },
+  "16g-fp8": {
+   "budget": 16,
+   "quantization": "fp8",
+   "offload_ar": true
+  },
+  "12g-safe": {
+   "budget": 12,
+   "quantization": "none",
+   "offload_ar": true
+  },
+  "12g": {
+   "budget": 12,
+   "quantization": "fp8",
+   "offload_ar": true
+  }
+ }
+}

@@ -1,0 +1,30 @@
+# Everything YuE Studio needs, in ONE environment (.venv, Python 3.12).
+# install.ps1 installs it with the Tsinghua PyPI mirror plus the Aliyun PyTorch mirror:
+#   uv pip install -r requirements.txt --find-links https://mirrors.aliyun.com/pytorch-wheels/cu128/
+# (run from the repository root; the CUDA 12.8 runtime ships inside the torch wheels)
+
+# --- YuE2 (generation) ---
+torch==2.10.0+cu128
+torchaudio==2.10.0+cu128
+# the bundled official runtime; it pins transformers==4.57.6 and numpy==2.2.6
+./vendor/YuE
+
+# --- SheetSage2 (transcription). Its own README pins torch 2.8 / transformers 4.45 / numpy 1.24, but its
+# transcriptions are byte-identical on the versions above (checked on hums, a synthetic melody and a song).
+scipy==1.18.1
+mir_eval==0.8.2
+pretty_midi==0.2.10
+mido==1.3.3
+# pretty_midi still imports pkg_resources, which newer setuptools removed
+setuptools==78.1.1
+soundfile
+
+# --- the app: desktop window, local API, MCP server ---
+fastapi==0.141.1
+uvicorn==0.53.0
+python-multipart==0.0.32
+pywebview==6.2.1
+mcp==1.30.0
+pillow==12.3.0
+# ships an ffmpeg.exe; install.ps1 copies it to tools/ffmpeg
+imageio-ffmpeg

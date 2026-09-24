@@ -1,0 +1,21 @@
+# Created by install.ps1 / at runtime — never commit
+.venv/
+.venv-*/
+tools/
+models/
+hf-cache/
+data/
+build/
+YuEStudio.exe
+*.log
+.studio/
+.tmp*
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Test outputs
+tests/follow_check/
+tests/merge_check/
