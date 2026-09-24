@@ -204,9 +204,17 @@ steps["mood"]["options"] = [{"value": v, "label": l, "style": s, "pin": p} for v
 steps["vocal"]["options"] = [{"value": v, "label": l, "style": s, "pin": p, "group": g,
                               **({"desc": "实测模型通常只唱出一个声部，想要对唱建议分两次生成"} if v == "duet" else {})}
                              for v, l, s, p, g in VOCALS]
-steps["lead"]["options"] = [{"value": v, "label": l, "style": s, "pin": p, "group": g} for v, l, s, p, g in LEADS]
-steps["extra"] = {"type": "text", "optional": True,
+# English names for section tags like the official demos' "[Intro: Piano & Flute]" (哼唱 → 纯音乐).
+LEAD_TAGS = {"piano": "Piano", "rhodes": "Electric Piano", "organ": "Organ", "synth": "Synth",
+             "guitar": "Electric Guitar", "acoustic": "Acoustic Guitar", "strings": "Strings", "violin": "Violin",
+             "cello": "Cello", "sax": "Saxophone", "trumpet": "Trumpet", "flute": "Flute", "harmonica": "Harmonica",
+             "guzheng": "Guzheng", "erhu": "Erhu", "pipa": "Pipa", "dizi": "Dizi", "musicbox": "Music Box"}
+steps["lead"]["options"] = [{"value": v, "label": l, "style": s, "pin": p, "group": g, "tag": LEAD_TAGS[v]}
+                            for v, l, s, p, g in LEADS]
+# Update rather than replace: other settings on the step (e.g. agent_skip) must survive a regeneration.
+steps["extra"] = {**steps.get("extra", {}), "type": "text", "optional": True,
                   "q": "补充描述（可选）：还想要什么具体效果？例如“前奏只有钢琴，副歌加入弦乐和鼓”“带点黑胶质感”"}
+steps["extra"].setdefault("agent_skip", True)
 for key, feature in flow["features"].items():
     if key != "remix" and "extra" not in feature["steps"]:
         feature["steps"].insert(feature["steps"].index("variants"), "extra")

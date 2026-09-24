@@ -103,41 +103,24 @@
     "variants"
    ]
   },
-  "cover_lyrics": {
+  "cover": {
    "category": "ref",
-   "label": "参考歌曲 → 换词",
-   "desc": "保留原曲的旋律、和声和速度，只换成新歌词",
+   "label": "参考歌曲改编",
+   "desc": "保留原曲的旋律；歌词（原词或新词）、曲风、演唱者都可以换或保持",
    "pipeline": {
     "transcribe": "full",
     "cot": "full"
    },
    "steps": [
     "ref_audio",
-    "orig_genre",
-    "vocal",
-    "language",
     "lyrics_source",
     "theme",
     "lyrics",
-    "extra",
-    "variants"
-   ]
-  },
-  "cover_style": {
-   "category": "ref",
-   "label": "参考歌曲 → 换风格 / 换人唱",
-   "desc": "保留原曲的旋律和歌词，换曲风、编曲或演唱者",
-   "pipeline": {
-    "transcribe": "melody-full",
-    "target_voice": "Vocal",
-    "cot": "melody",
-    "lyrics_required": true
-   },
-   "steps": [
-    "ref_audio",
-    "orig_lyrics",
+    "style_mode",
+    "orig_genre",
     "genre",
     "mood",
+    "harmony",
     "vocal",
     "language",
     "tempo",
@@ -990,8 +973,7 @@
      "only": [
       "hum_song",
       "hum_instrumental",
-      "cover_lyrics",
-      "cover_style"
+      "cover"
      ]
     },
     {
@@ -1032,126 +1014,144 @@
      "label": "钢琴",
      "style": "piano carries the melody, expressive solo piano, prominent piano lead",
      "pin": true,
-     "group": "键盘"
+     "group": "键盘",
+     "tag": "Piano"
     },
     {
      "value": "rhodes",
      "label": "电钢琴",
      "style": "Rhodes electric piano carries the melody",
      "pin": false,
-     "group": "键盘"
+     "group": "键盘",
+     "tag": "Electric Piano"
     },
     {
      "value": "organ",
      "label": "管风琴/哈蒙德",
      "style": "Hammond organ carries the melody",
      "pin": false,
-     "group": "键盘"
+     "group": "键盘",
+     "tag": "Organ"
     },
     {
      "value": "synth",
      "label": "合成器",
      "style": "synthesizer carries the melody, prominent synth lead, analog synth",
      "pin": true,
-     "group": "键盘"
+     "group": "键盘",
+     "tag": "Synth"
     },
     {
      "value": "guitar",
      "label": "电吉他",
      "style": "electric guitar carries the melody, prominent lead guitar, melodic guitar solo",
      "pin": true,
-     "group": "吉他与弦乐"
+     "group": "吉他与弦乐",
+     "tag": "Electric Guitar"
     },
     {
      "value": "acoustic",
      "label": "木吉他",
      "style": "acoustic guitar carries the melody, fingerpicked lead",
      "pin": false,
-     "group": "吉他与弦乐"
+     "group": "吉他与弦乐",
+     "tag": "Acoustic Guitar"
     },
     {
      "value": "strings",
      "label": "弦乐团",
      "style": "string orchestra carries the melody, soaring violins and cellos, cinematic strings",
      "pin": true,
-     "group": "吉他与弦乐"
+     "group": "吉他与弦乐",
+     "tag": "Strings"
     },
     {
      "value": "violin",
      "label": "小提琴",
      "style": "violin carries the melody, expressive solo violin lead",
      "pin": false,
-     "group": "吉他与弦乐"
+     "group": "吉他与弦乐",
+     "tag": "Violin"
     },
     {
      "value": "cello",
      "label": "大提琴",
      "style": "cello carries the melody, warm solo cello lead",
      "pin": false,
-     "group": "吉他与弦乐"
+     "group": "吉他与弦乐",
+     "tag": "Cello"
     },
     {
      "value": "sax",
      "label": "萨克斯",
      "style": "saxophone carries the melody, prominent tenor saxophone lead, saxophone solo",
      "pin": true,
-     "group": "管乐"
+     "group": "管乐",
+     "tag": "Saxophone"
     },
     {
      "value": "trumpet",
      "label": "小号",
      "style": "trumpet carries the melody, bright trumpet lead",
      "pin": false,
-     "group": "管乐"
+     "group": "管乐",
+     "tag": "Trumpet"
     },
     {
      "value": "flute",
      "label": "长笛",
      "style": "flute carries the melody, airy flute lead",
      "pin": false,
-     "group": "管乐"
+     "group": "管乐",
+     "tag": "Flute"
     },
     {
      "value": "harmonica",
      "label": "口琴",
      "style": "harmonica carries the melody",
      "pin": false,
-     "group": "管乐"
+     "group": "管乐",
+     "tag": "Harmonica"
     },
     {
      "value": "guzheng",
      "label": "古筝",
      "style": "guzheng carries the melody, prominent Chinese zither lead",
      "pin": true,
-     "group": "民族乐器"
+     "group": "民族乐器",
+     "tag": "Guzheng"
     },
     {
      "value": "erhu",
      "label": "二胡",
      "style": "erhu carries the melody, expressive Chinese erhu lead",
      "pin": false,
-     "group": "民族乐器"
+     "group": "民族乐器",
+     "tag": "Erhu"
     },
     {
      "value": "pipa",
      "label": "琵琶",
      "style": "pipa carries the melody, plucked Chinese pipa lead",
      "pin": false,
-     "group": "民族乐器"
+     "group": "民族乐器",
+     "tag": "Pipa"
     },
     {
      "value": "dizi",
      "label": "笛子",
      "style": "dizi bamboo flute carries the melody",
      "pin": false,
-     "group": "民族乐器"
+     "group": "民族乐器",
+     "tag": "Dizi"
     },
     {
      "value": "musicbox",
      "label": "八音盒",
      "style": "music box carries the melody, delicate",
      "pin": false,
-     "group": "其他"
+     "group": "其他",
+     "tag": "Music Box"
     }
    ]
   },
@@ -1271,7 +1271,12 @@
    "type": "choice",
    "q": "原曲大概是什么风格？（模型不能直接听原曲的编曲，要靠这个描述尽量还原）",
    "custom": true,
-   "options_from": "genre"
+   "options_from": "genre",
+   "when": {
+    "style_mode": [
+     "keep"
+    ]
+   }
   },
   "hum_singer": {
    "type": "choice",
@@ -1391,6 +1396,43 @@
    "optional": true,
    "q": "补充描述（可选）：还想要什么具体效果？例如“前奏只有钢琴，副歌加入弦乐和鼓”“带点黑胶质感”",
    "agent_skip": true
+  },
+  "style_mode": {
+   "type": "choice",
+   "q": "曲风怎么处理？",
+   "options": [
+    {
+     "value": "keep",
+     "label": "保持原曲风",
+     "desc": "描述一下原曲的风格，按它重新编曲"
+    },
+    {
+     "value": "new",
+     "label": "换新曲风",
+     "desc": "换一种风格来编曲"
+    }
+   ]
+  },
+  "harmony": {
+   "type": "choice",
+   "q": "和声（和弦）怎么处理？",
+   "when": {
+    "style_mode": [
+     "new"
+    ]
+   },
+   "options": [
+    {
+     "value": "reharm",
+     "label": "按新曲风重新配和声",
+     "desc": "风格换得更彻底，和原曲的和声差别更大（推荐）"
+    },
+    {
+     "value": "keep",
+     "label": "保留原曲和声",
+     "desc": "更像原曲，但和新曲风不搭时风格会出不来"
+    }
+   ]
   }
  },
  "step_when": {
@@ -1398,11 +1440,19 @@
    "edit_type": [
     "restyle",
     null
+   ],
+   "style_mode": [
+    "new",
+    null
    ]
   },
   "mood": {
    "edit_type": [
     "restyle",
+    null
+   ],
+   "style_mode": [
+    "new",
     null
    ]
   },

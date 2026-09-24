@@ -23,7 +23,7 @@ def check(name, ok, detail=""):
 s = agent.Session()
 start = s.call("wizard_start", {})
 fields = {f["feature"]: f["fields"] for f in start["features"]}
-check("start lists all 7 features", len(fields) == 7, str(list(fields)))
+check("start lists all 6 features", len(fields) == 6, str(list(fields)))
 check("no technical fields exposed", not any(k in f for f in fields.values() for k in ("vram", "variants", "tempo", "plan_mode")),
       str(fields["text_song"]))
 

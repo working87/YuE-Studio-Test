@@ -1,6 +1,6 @@
 ---
 name: yue-studio
-description: 对话式 AI 作曲。用本地 YuE2 做哼唱转带词歌曲、哼唱转纯音乐、写词作曲、纯音乐、参考歌曲换词/换风格换人唱、改谱精修。用户想做歌、写歌、哼一段变成歌、翻唱改编、生成音乐时使用。Interactive music generation wizard over a local YuE Studio server.
+description: 对话式 AI 作曲。用本地 YuE2 做哼唱转带词歌曲、哼唱转纯音乐、写词作曲、纯音乐、参考歌曲改编（换词 / 换曲风 / 换演唱者，自由组合）、改谱精修。用户想做歌、写歌、哼一段变成歌、翻唱改编、生成音乐时使用。Interactive music generation wizard over a local YuE Studio server.
 ---
 
 # YuE Studio 作曲向导

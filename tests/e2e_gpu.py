@@ -51,9 +51,11 @@ run("哼唱 → 带词歌曲", {"feature": "hum_song", "hum_audio": melody, "gen
 run("哼唱 → 纯音乐", {"feature": "hum_instrumental", "hum_audio": melody, "genre": "lofi", "lead": "piano", "mood": "warm"})
 if song:
     ref = str(config.DATA / "jobs" / song["id"] / song["takes"][0]["audio"])
-    run("参考歌曲 → 换词", {"feature": "cover_lyrics", "ref_audio": ref, "orig_genre": "ballad", "vocal": "f_bright",
+    run("改编：换词、保持曲风", {"feature": "cover", "ref_audio": ref, "style_mode": "keep",
+                        "orig_genre": "ballad", "vocal": "f_bright",
                         "lyrics_source": "self", "lyrics": NEW_LYRICS})
-    run("参考歌曲 → 换风格", {"feature": "cover_style", "ref_audio": ref, "orig_lyrics": LYRICS, "genre": "jazz",
+    run("改编：原词、换曲风", {"feature": "cover", "ref_audio": ref, "lyrics_source": "self", "lyrics": LYRICS,
+                        "style_mode": "new", "harmony": "reharm", "genre": "jazz",
                          "mood": "warm", "vocal": "m_warm"})
     run("改谱精修（改速度）", {"feature": "remix", "base_job": song["id"], "edit_type": "tempo", "new_tempo": "100"})
 print()

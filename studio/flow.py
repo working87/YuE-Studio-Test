@@ -14,6 +14,27 @@ FLOW = json.loads((Path(__file__).with_name("flow.json")).read_text(encoding="ut
 MORE, BACK = "__more__", "__back__"
 TARGET_SECONDS = {"short": 60, "standard": 150, "long": 240}
 HUM_INSTRUMENTAL_LYRICS = "[Instrumental Intro]\n\n[Instrumental Break]\n\n[Instrumental Outro]"
+
+
+def lead_tag(lead):
+    """English instrument name of a lead preset (free text is used as written)."""
+    return next((o.get("tag") for o in FLOW["steps"]["lead"]["options"] if o["value"] == lead), lead)
+
+
+def hum_instrumental_lyrics(lead):
+    """Instrumental section tags that also name the lead, like the official demos' "[Intro: Piano & Flute]"."""
+    tag = lead_tag(lead) if lead else None
+    if not tag:
+        return HUM_INSTRUMENTAL_LYRICS
+    return f"[Instrumental Intro: {tag}]\n\n[Instrumental Break: {tag} Solo]\n\n[Instrumental Outro: {tag}]"
+
+
+def _hum_instrumental_opening(a):
+    """The lead instrument goes first: the model weighs the start of the style most."""
+    tag = lead_tag(a.get("lead")) if a.get("lead") else None
+    return f"{tag}-led instrumental, no vocals. " if tag else "Instrumental, no vocals. "
+
+
 INSTRUMENTAL_LYRICS = {
     "short": "[Intro]\n\n[Theme]\n\n[Outro]",
     "standard": "[Intro]\n\n[Theme]\n\n[Development]\n\n[Theme]\n\n[Bridge]\n\n[Theme]\n\n[Outro]",
@@ -72,8 +93,7 @@ def options(step, answers, agent):
             continue
         if opt.get("agent_only") and not agent:
             continue
-        if step == "language" and opt["value"] == "auto" and agent and answers.get("lyrics_source") != "self" \
-                and feature != "cover_style":
+        if step == "language" and opt["value"] == "auto" and agent and answers.get("lyrics_source") != "self":
             continue  # the agent writes the lyrics, so it must be told which language to write
         result.append(opt)
     return result
@@ -324,10 +344,19 @@ def _style_fragment(step, value):
 
 def build_spec(state):
     """Turn answers into a job spec understood by studio.pipeline."""
-    a = state["answers"]
+    answers, agent = state["answers"], state.get("agent", True)
+    steps = feature_steps(answers)
+    # Only answers to steps that currently apply: switching e.g. "用原歌词" to "换新歌词" in the form hides the
+    # pasted lyrics, and a hidden answer must not leak into the song.
+    a = {k: v for k, v in answers.items()
+         if k not in steps or k in ("category", "feature") or visible(k, answers, steps, agent)}
     feature = a["feature"]
     meta = FLOW["features"][feature]
     pipe = dict(meta["pipeline"])
+    if feature == "cover" and a.get("style_mode") == "new" and a.get("harmony", "reharm") == "reharm":
+        # A new style with new harmony: keep only the sung melody and let the model re-harmonise it
+        # (otherwise the original chords come along and hold the arrangement close to the original).
+        pipe = {"transcribe": "melody-full", "target_voice": "Vocal", "cot": "melody"}
     instrumental = pipe.get("instrumental", False)
     lyrics = normalize_lyrics(a.get("lyrics") or a.get("orig_lyrics"))
     parts = []
@@ -369,7 +398,7 @@ def build_spec(state):
         bpm = int(a["new_tempo"])
     spec = {
         "feature": feature, "label": meta["label"],
-        "style": (("Instrumental, no vocals. " if hum_instrumental else "") + ", ".join(p for p in parts if p)) or None,
+        "style": ((_hum_instrumental_opening(a) if hum_instrumental else "") + ", ".join(p for p in parts if p)) or None,
         "lyrics": lyrics,
         "cot": a.get("plan_mode", pipe.get("cot", "full")),
         "transcribe": pipe.get("transcribe"),
@@ -391,7 +420,8 @@ def build_spec(state):
     spec["instrumental"] = instrumental
     if instrumental and not spec["lyrics"]:
         # With a hum the melody sets the form; only three sections, all marked instrumental like the official demos.
-        spec["lyrics"] = HUM_INSTRUMENTAL_LYRICS if spec["audio"] else INSTRUMENTAL_LYRICS[a.get("structure", "standard")]
+        spec["lyrics"] = (hum_instrumental_lyrics(a.get("lead")) if spec["audio"]
+                          else INSTRUMENTAL_LYRICS[a.get("structure", "standard")])
     if instrumental and not spec["audio"]:
         # YuE2 has no length parameter: the planned score is trimmed to this length before audio.
         spec["target_seconds"] = TARGET_SECONDS[a.get("structure", "standard")]

@@ -119,7 +119,11 @@ def preview(body: JobIn):
     state = {"answers": body.answers or {}, "page": 0, "agent": False}
     missing = flow.pending(state)
     spec = flow.build_spec(state) if not missing else None
-    found = flow.detect_language((body.answers or {}).get("lyrics") or (body.answers or {}).get("orig_lyrics"))
+    raw = body.answers or {}
+    # The lyrics actually used (a hidden box may still hold text from an earlier choice).
+    found = flow.detect_language(spec["lyrics"] if spec else
+                                 (raw.get("orig_lyrics") if raw.get("lyrics_mode") == "keep" else raw.get("lyrics"))
+                                 or raw.get("lyrics") or raw.get("orig_lyrics"))
     s = load_settings()
     return {"missing": missing, "spec": spec, "lyrics_language": found,
             "lyrics_language_name": flow.LANG_NAMES.get(found), "can_translate": bool(s["api_key"] and s["model"])}
