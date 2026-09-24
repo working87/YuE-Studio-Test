@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import math
 import sys
 import time
 import traceback
@@ -26,6 +27,11 @@ sys.path.insert(0, str(ROOT / "vendor/YuE/skills/yue2-music/scripts"))
 from studio import abcutil  # noqa: E402  (stdlib-only module)
 
 TOKENS_PER_SECOND = 25  # YuE2 semantic codec rate (measured: 4110 tokens → 164.4 s)
+# Past the end of a score we prepared, the model rarely emits MUSIC_END by itself: it keeps playing until the
+# budget runs out, so any margin becomes delivered length (a 62 s score under a 76 s cap came back as 76 s,
+# the last 14 s improvised). Same finding and remedy as yuey.cpp's score-aligned generation: require the
+# whole score, then allow only a short decay tail.
+DECAY_TAIL_SECONDS = 2
 MALE_MAX_WRITTEN_MEDIAN = 64  # MIDI (E4). Measured: female plans 76–77 → sung ~340 Hz; male plans 66–74 → sung
                               # 220–310 Hz; a male plan moved down to 61 → sung 139 Hz (clearly male).
 FEMALE_MIN_WRITTEN_MEDIAN = 67  # MIDI (G4): a male-range score is raised for a female singer.
@@ -93,7 +99,8 @@ def main():
 
     rows = [json.loads(l) for l in (args.job / "batch.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
     post = json.loads((args.job / "post.json").read_text(encoding="utf-8")) if (args.job / "post.json").exists() else {}
-    models = ROOT / "models"
+    from studio import config  # stdlib-only; honours STUDIO_MODELS
+    models = config.MODELS
     pipe = YuE2Pipeline.from_pretrained(str(models / "YuE2-3B"), vae=str(models / "YuE2-Vae"), device="cuda",
                                         memory_budget_gib=args.budget, quantization=args.quantization,
                                         offload_ar=args.offload_ar, local_files_only=True,
@@ -116,25 +123,40 @@ def main():
                         (out / "plan_original.abc").write_text(plan.abc, encoding="utf-8")
                         request = dataclasses.replace(request, abc=edited)
                         plan = pipe.plan(request=request)
-                sampling = None
-                if post.get("target_seconds"):  # hard stop in case the model keeps playing past the plan
-                    sampling = {"max_tokens": int(post["target_seconds"] * 1.2 * TOKENS_PER_SECOND) + 100}
+                sampling, score_seconds = None, None
+                # Score-aligned length whenever the score is ours (trimmed to a target, or transcribed /
+                # refined from given audio): play all of it, then stop after a short decay tail.
+                # A score the model plans freely (written songs) keeps the model's own ending.
+                if plan.abc is not None and (post.get("target_seconds") or row.get("abc")):
+                    try:
+                        score_seconds = abcutil.duration_seconds(plan.abc)
+                    except Exception as exc:  # noqa: BLE001
+                        log(f"[studio] cannot time the score ({exc}); using the model's own ending")
+                if score_seconds:
+                    minimum = int(math.ceil(score_seconds * TOKENS_PER_SECOND))
+                    sampling = {"min_tokens": minimum,
+                                "max_tokens": minimum + DECAY_TAIL_SECONDS * TOKENS_PER_SECOND}
                 semantic = pipe.generate_semantic(plan, sampling=sampling)
                 latents = pipe.synthesize(semantic)
                 audio = pipe.decode(latents)
-                if semantic.truncated:  # cut at the length cap: fade out instead of stopping dead
-                    fade = min(len(audio), 4 * 48000)
+                ended_at_score = bool(score_seconds and semantic.truncated)
+                if semantic.truncated:  # stop at the cap with a fade instead of dead silence
+                    fade = min(len(audio), (DECAY_TAIL_SECONDS if ended_at_score else 4) * 48000)
                     audio[-fade:] *= np.linspace(1.0, 0.0, fade, dtype=audio.dtype)[:, None]
-                    notes.append("达到长度上限，结尾已淡出")
+                    notes.append("按乐谱结尾收尾，余音淡出" if ended_at_score else "达到长度上限，结尾已淡出")
                 config = pipe.effective_config(request, None, sampling)
                 seconds = time.perf_counter() - started
                 result = SongResult(audio, 48000, semantic, latents, config, pipe.weights,
                                     {"e2e_seconds": seconds, "abc": plan.timing, "semantic": semantic.timing},
                                     identity({"request": request.to_dict(), "config": config, "weights": pipe.weights}))
                 receipt = result.save_artifacts(out)
+                truncated = dict(receipt["truncated"])
+                if ended_at_score:  # reaching the score-aligned cap is the planned ending, not a cut-off
+                    truncated["semantic"] = False
                 write_json(out / "studio.json", {"generation_seconds": round(seconds, 1),
                                                   "audio_seconds": round(receipt["audio_seconds"], 1),
-                                                  "truncated": receipt["truncated"], "post": notes})
+                                                  "score_seconds": round(score_seconds, 1) if score_seconds else None,
+                                                  "truncated": truncated, "post": notes})
                 log(f"[studio] {row['id']} done: {receipt['audio_seconds']:.1f}s audio in {seconds:.1f}s "
                     f"{'; '.join(notes)}")
             except Exception as exc:  # noqa: BLE001
