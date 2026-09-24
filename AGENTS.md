@@ -10,7 +10,9 @@ mirrors; do not switch to GitHub / Hugging Face / pytorch.org unless the user ex
 - Everything installs **inside the repo folder** (`tools\`, `.venv\`, `models\`). Never install Python, CUDA,
   FFmpeg or anything else system-wide, and never change system settings or PATH.
 - The user does **not** need CUDA Toolkit: the torch wheels bundle the CUDA 12.8 runtime. Only the NVIDIA driver matters.
-- Model downloads are ~10 GB and the environment ~7 GB. Check free space first and tell the user before starting.
+- Installed size ~15 GB (models 9.8 GB + `.venv` 4.7 GB + `tools` 0.2 GB). During installation ~20 GB free is
+  needed: uv's ~5 GB download cache lives in `tools\uv-cache` and is cleared after a successful install
+  (kept after a failure so a re-run resumes). Check free space first and tell the user before starting.
 - Do not modify `vendor/YuE` (official code, patched at install time by `scripts\patch_windows.py`).
 
 ## 1. Detect the GPU and decide

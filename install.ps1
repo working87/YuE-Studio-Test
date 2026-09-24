@@ -47,7 +47,7 @@ if (-not $gpu.ok) {
     Write-Host "$($gpu.message)（档位 $($gpu.profile)）" -ForegroundColor $color
 }
 $free = (Get-PSDrive ($Root.Substring(0, 1))).Free / 1GB
-if ($free -lt 30) { Write-Host ("磁盘剩余 {0:N0} GB；完整安装约需 25 GB（环境约 7 GB + 模型约 10 GB + 下载缓存）。" -f $free) -ForegroundColor Yellow }
+if ($free -lt 20) { Write-Host ("磁盘剩余 {0:N0} GB；安装过程中约需 20 GB（环境约 5 GB + 模型约 10 GB + 约 5 GB 临时下载缓存，装完自动清掉），装好后约占 15 GB。" -f $free) -ForegroundColor Yellow }
 
 # ---------------------------------------------------------------- 2. uv
 Step "2/6 准备 uv（Python 包管理器，清华 PyPI 镜像）"
@@ -81,6 +81,8 @@ $env:UV_PYTHON_PREFERENCE = "only-managed"
 $env:UV_HTTP_TIMEOUT = "300"
 $env:UV_LINK_MODE = "copy"
 $env:UV_NO_CONFIG = "1"            # ignore any personal uv.toml that could point elsewhere
+$UvCache = Join-Path $Root "tools\uv-cache"
+$env:UV_CACHE_DIR = $UvCache       # downloads stay in this folder (not on C:), cleared once the packages are installed
 
 # ---------------------------------------------------------------- 3. Python + packages
 Step "3/6 创建 Python $PythonVersion 环境并安装依赖（torch 约 3 GB，第一次需要几分钟）"
@@ -92,6 +94,8 @@ if (-not (Test-Path $Py)) {
 Check "安装依赖失败（见上方 uv 的报错；如果是网络超时，重新运行 install.bat 即可）"
 & $Py scripts\patch_windows.py
 Check "给 YuE2 打 Windows 补丁失败"
+# The packages are installed; the ~5 GB of downloaded wheels are no longer needed (kept only if a step above failed).
+& $Uv cache clean 2>$null | Out-Null
 
 # ---------------------------------------------------------------- 4. FFmpeg
 Step "4/6 准备 FFmpeg"
